@@ -1,0 +1,6 @@
+bin/
+lib/
+pyenv.cfg/
+.Python
+.idea/
+/data/*.pdf
