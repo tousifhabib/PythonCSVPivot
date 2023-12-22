@@ -41,10 +41,7 @@ def preprocess_data(df, filters, group_cols, agg_func):
 
 
 def calculate_subtotals(grouped_data, group_by_col, agg_col):
-    subtotals = (
-        grouped_data.groupby(group_by_col)[agg_col].sum().reset_index(name=agg_col)
-    )
-    return subtotals
+    return grouped_data.groupby(group_by_col)[agg_col].sum().reset_index(name=agg_col)
 
 
 def add_grand_total(subtotals, subtotal_col, agg_col):
@@ -56,22 +53,38 @@ def add_grand_total(subtotals, subtotal_col, agg_col):
 
 def prepare_subtotal_rows(grouped_data, subtotal_cols, agg_col):
     subtotals = calculate_subtotals(grouped_data, subtotal_cols, agg_col)
-    grouped_data["key"] = grouped_data[subtotal_cols].apply(tuple, axis=1)
-    subtotals["key"] = subtotals[subtotal_cols].apply(tuple, axis=1)
+    subtotals_primary = calculate_subtotals(grouped_data, subtotal_cols[:1], agg_col)
 
-    final_data = pd.DataFrame(columns=grouped_data.columns)
-    for _, group_data in grouped_data.groupby(subtotal_cols):
-        key = group_data["key"].iloc[0]
-        subtotal_row = subtotals[subtotals["key"] == key]
-        final_data = pd.concat([final_data, subtotal_row, group_data], ignore_index=True)
+    grouped_data["key"] = grouped_data[subtotal_cols].agg(tuple, axis=1)
+    subtotals["key"] = subtotals[subtotal_cols].agg(tuple, axis=1)
+    subtotals_primary["key"] = subtotals_primary[subtotal_cols[0]].apply(lambda x: (x,))
 
+    rows_to_concat = []
+    for key, group_data in grouped_data.groupby(subtotal_cols[0]):
+        subtotal_row_primary = subtotals_primary[subtotals_primary["key"] == (key,)]
+        rows_to_concat.append(subtotal_row_primary)
+
+        if len(subtotal_cols) > 1:
+            for _, sub_group_data in group_data.groupby(subtotal_cols[1:]):
+                sub_key = sub_group_data["key"].iloc[0]
+                subtotal_row = subtotals[subtotals["key"] == sub_key]
+                rows_to_concat.extend([subtotal_row, sub_group_data])
+        else:
+            rows_to_concat.append(group_data)
+
+    final_data = pd.concat(rows_to_concat, ignore_index=True)
     final_data.drop(columns=["key"], inplace=True)
+
+    columns = [col for col in final_data.columns if col != agg_col] + [agg_col]
+    final_data = final_data[columns]
+
     return final_data
 
 
 def calculate_totals(grouped_data, subtotal_cols, agg_col):
     print("Processed data:")
     print(grouped_data)
+
     original_agg_sum = grouped_data[agg_col].sum()
 
     if subtotal_cols:
@@ -79,10 +92,12 @@ def calculate_totals(grouped_data, subtotal_cols, agg_col):
     else:
         final_data = grouped_data
 
-    grand_total_row = {agg_col: original_agg_sum,
-                       subtotal_cols[0] if subtotal_cols else final_data.columns[0]: 'Grand Total'}
-    grand_total = pd.DataFrame([grand_total_row], columns=final_data.columns)
-    final_data = pd.concat([final_data, grand_total], ignore_index=True)
+    grand_total_row = pd.DataFrame([{agg_col: original_agg_sum,
+                                     subtotal_cols[0] if subtotal_cols else final_data.columns[0]: 'Grand Total'}])
+    final_data = pd.concat([final_data, grand_total_row], ignore_index=True)
+
+    columns = [col for col in final_data.columns if col != agg_col] + [agg_col]
+    final_data = final_data[columns]
 
     print("subtotal column:")
     print(subtotal_cols)
@@ -92,3 +107,4 @@ def calculate_totals(grouped_data, subtotal_cols, agg_col):
     print(final_data)
 
     return final_data
+
