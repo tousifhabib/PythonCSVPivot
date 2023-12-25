@@ -82,8 +82,6 @@ def prepare_subtotal_rows(grouped_data, subtotal_cols, agg_col):
 
 
 def calculate_totals(grouped_data, subtotal_cols, agg_col):
-    print("Processed data:")
-    print(grouped_data)
 
     original_agg_sum = grouped_data[agg_col].sum()
 
@@ -98,13 +96,6 @@ def calculate_totals(grouped_data, subtotal_cols, agg_col):
 
     columns = [col for col in final_data.columns if col != agg_col] + [agg_col]
     final_data = final_data[columns]
-
-    print("subtotal column:")
-    print(subtotal_cols)
-    print("Aggregation column:")
-    print(agg_col)
-    print("Final data: ")
-    print(final_data)
 
     return final_data
 

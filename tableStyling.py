@@ -3,8 +3,6 @@ from reportlab.platypus import TableStyle
 
 
 def create_table_data(df, dynamic_cols):
-    print("create_table_data")
-    print(df)
     df = df.copy()
     df.fillna("", inplace=True)
 
