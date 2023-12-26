@@ -6,6 +6,13 @@ def create_table_data(df, dynamic_cols):
     df = df.copy()
     df.fillna("", inplace=True)
 
+    df['Subtotal_Level'] = None
+    for idx, col in enumerate(dynamic_cols[:-1]):
+        is_subtotal = df[col].eq("") & df[dynamic_cols[idx + 1]].ne("")
+        df.loc[is_subtotal, 'Subtotal_Level'] = idx + 1
+
+    df.loc[df[dynamic_cols[-1]] == "Grand Total", 'Subtotal_Level'] = 0
+
     subtotal_and_total_rows = df[dynamic_cols[-1]].isin(["", "Grand Total"])
     df.loc[subtotal_and_total_rows, dynamic_cols[:-1]] = ""
 
@@ -17,6 +24,9 @@ def create_table_data(df, dynamic_cols):
             .all(axis=1), "")
 
     table_data = [df.columns.tolist()] + df.values.tolist()
+
+    for row in table_data:
+        del row[-1]
 
     return table_data
 
@@ -41,7 +51,6 @@ def apply_table_styles(table, table_data, dynamic_cols):
     """Apply styles to the table including span styles and special row styles."""
     style = apply_base_styles(table)
 
-    # Call apply_span_styles with the correct number of arguments
     apply_span_styles(table, table_data, dynamic_cols)
 
     apply_special_row_styles(table_data, style, dynamic_cols)
@@ -51,14 +60,21 @@ def apply_table_styles(table, table_data, dynamic_cols):
 
 def apply_special_row_styles(table_data, style, dynamic_cols):
     """Apply styles for subtotal, grand total, and other special rows."""
-    for row_num, row_data in enumerate(table_data):
-        if row_num == 0:
-            continue
+    colors_list = [colors.lightgrey, colors.lightblue]
 
+    for row_num, row_data in enumerate(table_data[1:], 1):
         if "Grand Total" in row_data:
             style.add("BACKGROUND", (0, row_num), (-1, row_num), colors.yellow)
-        elif row_data[dynamic_cols.index(dynamic_cols[-1])] == "":
-            style.add("BACKGROUND", (0, row_num), (-1, row_num), colors.lightgrey)
+        else:
+            level = None
+            start_col = next((i for i, x in enumerate(row_data) if x), len(row_data))
+            for i, col in enumerate(dynamic_cols):
+                if row_data[i] != "" and (i == len(dynamic_cols) - 1 or row_data[i + 1] == ""):
+                    level = i
+                    break
+
+            if level is not None and level < len(colors_list):
+                style.add("BACKGROUND", (start_col, row_num), (-1, row_num), colors_list[level])
 
 
 def apply_span_styles(table, table_data, dynamic_cols):
