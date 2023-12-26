@@ -7,24 +7,21 @@ def create_table_data(df, dynamic_cols):
     df.fillna("", inplace=True)
 
     df['Subtotal_Level'] = None
-    for idx, col in enumerate(dynamic_cols[:-1]):
-        is_subtotal = df[col].eq("") & df[dynamic_cols[idx + 1]].ne("")
+    for idx, (current_col, next_col) in enumerate(zip(dynamic_cols[:-1], dynamic_cols[1:])):
+        is_subtotal = df[current_col].eq("") & df[next_col].ne("")
         df.loc[is_subtotal, 'Subtotal_Level'] = idx + 1
 
     df.loc[df[dynamic_cols[-1]] == "Grand Total", 'Subtotal_Level'] = 0
-
     subtotal_and_total_rows = df[dynamic_cols[-1]].isin(["", "Grand Total"])
     df.loc[subtotal_and_total_rows, dynamic_cols[:-1]] = ""
 
     for idx, col in enumerate(dynamic_cols[:-1]):
-        df[col] = df[col].mask(
+        df[col] = df[col].where(~(
             df[col].eq(df[col].shift()) &
-            df[dynamic_cols[:idx]]
-            .eq(df[dynamic_cols[:idx]].shift(1))
-            .all(axis=1), "")
+            df[dynamic_cols[:idx]].eq(df[dynamic_cols[:idx]].shift(1)).all(axis=1)
+        ), "")
 
     table_data = [df.columns.tolist()] + df.values.tolist()
-
     for row in table_data:
         del row[-1]
 
