@@ -17,8 +17,8 @@ def create_table_data(df, dynamic_cols):
 
     for idx, col in enumerate(dynamic_cols[:-1]):
         df[col] = df[col].where(~(
-            df[col].eq(df[col].shift()) &
-            df[dynamic_cols[:idx]].eq(df[dynamic_cols[:idx]].shift(1)).all(axis=1)
+                df[col].eq(df[col].shift()) &
+                df[dynamic_cols[:idx]].eq(df[dynamic_cols[:idx]].shift(1)).all(axis=1)
         ), "")
 
     table_data = [df.columns.tolist()] + df.values.tolist()
@@ -28,40 +28,50 @@ def create_table_data(df, dynamic_cols):
     return table_data
 
 
-def apply_base_styles(table):
+def apply_base_styles(table, config):
     """Apply base styles to the table."""
-    style = TableStyle(
-        [
-            ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-            ("GRID", (0, 0), (-1, -1), 1, colors.black),
-        ]
-    )
+    # Extract alignment settings from config
+    global_align = config['alignment']['global']
+    header_align = config['alignment']['header']
+
+    style = TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+        ("ALIGN", (0, 0), (-1, 0), header_align),
+        ("ALIGN", (0, 1), (-1, -1), global_align),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+        ("GRID", (0, 0), (-1, -1), 1, colors.black),
+    ])
+
     table.setStyle(style)
     return style
 
 
-def apply_table_styles(table, table_data, dynamic_cols):
+def apply_table_styles(table, table_data, dynamic_cols, config):
     """Apply styles to the table including span styles and special row styles."""
-    style = apply_base_styles(table)
+    style = apply_base_styles(table, config)
 
     apply_span_styles(table, table_data, dynamic_cols)
 
-    apply_special_row_styles(table_data, style, dynamic_cols)
+    apply_special_row_styles(table, table_data, style, dynamic_cols, config)
 
     table.setStyle(style)
 
 
-def apply_special_row_styles(table_data, style, dynamic_cols):
+def apply_special_row_styles(table, table_data, style, dynamic_cols, config):
     """Apply styles for subtotal, grand total, and other special rows."""
     colors_list = [colors.lightgrey, colors.lightblue]
+
+    subtotal_align = config['alignment']['content']['subtotal']
+    number_align = config['alignment']['content']['numbers']
+    text_align = config['alignment']['content']['text']
 
     for row_num, row_data in enumerate(table_data[1:], 1):
         if "Grand Total" in row_data:
             style.add("BACKGROUND", (0, row_num), (-1, row_num), colors.yellow)
+            # Apply number alignment to the Grand Total count cell
+            style.add("ALIGN", (-1, row_num), (-1, row_num), number_align)
         else:
             level = None
             start_col = next((i for i, x in enumerate(row_data) if x), len(row_data))
@@ -72,6 +82,17 @@ def apply_special_row_styles(table_data, style, dynamic_cols):
 
             if level is not None and level < len(colors_list):
                 style.add("BACKGROUND", (start_col, row_num), (-1, row_num), colors_list[level])
+
+            for col_num, cell in enumerate(row_data):
+                if isinstance(cell, (int, float)):
+                    style.add("ALIGN", (col_num, row_num), (col_num, row_num), number_align)
+                elif "Subtotal" in cell or "Grand Total" in cell:
+                    style.add("ALIGN", (col_num, row_num), (col_num, row_num), subtotal_align)
+                else:
+                    style.add("ALIGN", (col_num, row_num), (col_num, row_num), text_align)
+
+    table.setStyle(style)
+
 
 
 def apply_span_styles(table, table_data, dynamic_cols):

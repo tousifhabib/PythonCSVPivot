@@ -5,7 +5,7 @@ from tableStyling import create_table_data, apply_table_styles
 logging.basicConfig(level=logging.INFO)
 
 
-def save_pdf(data, file_path, page_size, dynamic_cols):
+def save_pdf(data, file_path, page_size, dynamic_cols, config):
     """Generate a PDF with the given data and specifications."""
     if data.empty:
         logging.warning("No data to display in the PDF.")
@@ -16,7 +16,7 @@ def save_pdf(data, file_path, page_size, dynamic_cols):
         table_data = create_table_data(data, dynamic_cols)
         table = Table(table_data)
 
-        apply_table_styles(table, table_data, dynamic_cols)
+        apply_table_styles(table, table_data, dynamic_cols, config)
         doc.build([table])
         logging.info("PDF generation completed successfully.")
 

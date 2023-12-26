@@ -1,9 +1,15 @@
+import json
 import os
 import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from dataProcessing import load_data, preprocess_data, calculate_totals
 from pdfGeneration import save_pdf, dynamic_columns_for_pdf
+
+
+def load_config():
+    with open('config.json', 'r') as file:
+        return json.load(file)
 
 
 def create_pdf_file_path(csv_file_path):
@@ -15,6 +21,7 @@ def create_pdf_file_path(csv_file_path):
 
 def main(csv_file_path, filters, group_cols, agg_func, agg_col, subtotal_col=None, page_size=letter):
     """Main function to process data and generate PDF."""
+    config = load_config()
     try:
         df = load_data(csv_file_path)
         if df.empty:
@@ -26,7 +33,7 @@ def main(csv_file_path, filters, group_cols, agg_func, agg_col, subtotal_col=Non
         dynamic_columns = dynamic_columns_for_pdf(group_cols, agg_col)
 
         pdf_file_path = create_pdf_file_path(csv_file_path)
-        save_pdf(final_data, pdf_file_path, page_size, dynamic_columns)
+        save_pdf(final_data, pdf_file_path, page_size, dynamic_columns, config)
 
     except Exception as e:
         print(f"An error occurred: {e}")

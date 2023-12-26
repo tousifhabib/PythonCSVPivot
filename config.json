@@ -1,0 +1,12 @@
+{
+    "alignment": {
+        "global": "LEFT",
+        "header": "CENTER",
+        "content": {
+            "default": "LEFT",
+            "subtotal": "LEFT",
+            "numbers": "RIGHT",
+            "text": "LEFT"
+        }
+    }
+}
