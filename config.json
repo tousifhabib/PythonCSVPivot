@@ -1,12 +1,12 @@
 {
     "alignment": {
-        "global": "LEFT",
+        "global": "CENTER",
         "header": "CENTER",
         "content": {
-            "default": "LEFT",
-            "subtotal": "LEFT",
-            "numbers": "RIGHT",
-            "text": "LEFT"
+            "default": "CENTER",
+            "subtotal": "CENTER",
+            "numbers": "CENTER",
+            "text": "CENTER"
         }
     }
 }
