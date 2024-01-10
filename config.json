@@ -5,7 +5,7 @@
         "content": {
             "default": "CENTER",
             "subtotal": "CENTER",
-            "numbers": "CENTER",
+            "numbers": "RIGHT",
             "text": "CENTER"
         }
     }
