@@ -4,7 +4,8 @@ import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from dataProcessing import load_data, preprocess_data, calculate_totals
-from pdfGeneration import save_pdf, dynamic_columns_for_pdf, save_excel
+from excelGeneration import save_excel
+from pdfGeneration import save_pdf, dynamic_columns_for_pdf
 
 
 def load_config():

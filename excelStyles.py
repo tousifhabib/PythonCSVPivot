@@ -1,30 +1,36 @@
+from typing import Dict, Any
 from openpyxl.styles import PatternFill, Font
+from openpyxl.worksheet.worksheet import Worksheet
+from pandas import DataFrame
 from tableDataProcessing import assign_subtotal_levels
 
 
-def apply_excel_colors(worksheet, config, df, dynamic_cols):
-    header_fill = PatternFill(start_color=config['colors']['header']['background'],
-                              end_color=config['colors']['header']['background'],
-                              fill_type="solid")
-    header_font = Font(color=config['colors']['header']['text'], bold=True)
+def create_fill(color: str) -> PatternFill:
+    return PatternFill(start_color=color, end_color=color, fill_type="solid")
+
+
+def create_font(color: str, bold: bool = False) -> Font:
+    return Font(color=color, bold=bold)
+
+
+def style_cell(cell, fill: PatternFill, font: Font):
+    cell.fill = fill
+    cell.font = font
+
+
+def apply_row_styles(worksheet: Worksheet, df: DataFrame, config: Dict[str, Any], dynamic_cols: list):
+    header_fill = create_fill(config['colors']['header']['background'])
+    header_font = create_font(config['colors']['header']['text'], bold=True)
+
     for cell in worksheet[1]:
-        cell.fill = header_fill
-        cell.font = header_font
+        style_cell(cell, header_fill, header_font)
 
-    default_fill = PatternFill(start_color=config['colors']['default']['background'],
-                               end_color=config['colors']['default']['background'],
-                               fill_type="solid")
-    default_font = Font(color=config['colors']['default']['text'])
-
-    subtotal_fill = PatternFill(start_color=config['colors']['subtotal']['background'],
-                                end_color=config['colors']['subtotal']['background'],
-                                fill_type="solid")
-    subtotal_font = Font(color=config['colors']['subtotal']['text'])
-
-    grand_total_fill = PatternFill(start_color=config['colors']['grand_total']['background'],
-                                   end_color=config['colors']['grand_total']['background'],
-                                   fill_type="solid")
-    grand_total_font = Font(color=config['colors']['grand_total']['text'])
+    default_fill = create_fill(config['colors']['default']['background'])
+    default_font = create_font(config['colors']['default']['text'])
+    subtotal_fill = create_fill(config['colors']['subtotal']['background'])
+    subtotal_font = create_font(config['colors']['subtotal']['text'])
+    grand_total_fill = create_fill(config['colors']['grand_total']['background'])
+    grand_total_font = create_font(config['colors']['grand_total']['text'])
 
     processed_df = df.copy()
     assign_subtotal_levels(processed_df, dynamic_cols)
@@ -36,12 +42,11 @@ def apply_excel_colors(worksheet, config, df, dynamic_cols):
         is_subtotal_row = level > 1 and not is_grand_total_row
 
         for cell in row:
-            if is_grand_total_row:
-                cell.fill = grand_total_fill
-                cell.font = grand_total_font
-            elif is_subtotal_row:
-                cell.fill = subtotal_fill
-                cell.font = subtotal_font
-            else:
-                cell.fill = default_fill
-                cell.font = default_font
+            fill, font = (grand_total_fill, grand_total_font) if is_grand_total_row else \
+                (subtotal_fill, subtotal_font) if is_subtotal_row else \
+                    (default_fill, default_font)
+            style_cell(cell, fill, font)
+
+
+def apply_excel_colors(worksheet: Worksheet, config: Dict[str, Any], df: DataFrame, dynamic_cols: list):
+    apply_row_styles(worksheet, df, config, dynamic_cols)
