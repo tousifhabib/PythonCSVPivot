@@ -50,7 +50,7 @@ def main(csv_file_path, filters, group_cols, agg_func, agg_col, subtotal_col=Non
 
 
 if __name__ == "__main__":
-    csv_file_path = "/Users/ts-tousif.habib/Development/Repos/automatic-failure-verification/csv_export/full_report_240110_0946.csv"
+    csv_file_path = "/Users/ts-tousif.habib/Development/Repos/automatic-failure-verification/csv_export/full_report_240219_1119.csv"
     filters = {"result": "failed"}
     group_cols = ["errorType", "comment"]
     agg_func = "count"

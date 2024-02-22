@@ -1,12 +1,26 @@
 {
-    "alignment": {
-        "global": "CENTER",
-        "header": "CENTER",
-        "content": {
-            "default": "CENTER",
-            "subtotal": "CENTER",
-            "numbers": "RIGHT",
-            "text": "CENTER"
-        }
+  "alignment": {
+    "global": "CENTER",
+    "header": "CENTER",
+    "content": {
+      "default": "CENTER",
+      "subtotal": "CENTER",
+      "numbers": "RIGHT",
+      "text": "CENTER"
     }
+  },
+  "colors": {
+    "header": {
+      "background": "CCCCCC",
+      "text": "FFFFFF"
+    },
+    "subtotal": {
+      "background": "FFFF00",
+      "text": "000000"
+    },
+    "default": {
+      "background": "FFFFFF",
+      "text": "000000"
+    }
+  }
 }

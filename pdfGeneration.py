@@ -2,6 +2,8 @@ from openpyxl.utils import get_column_letter
 import pandas as pd
 from reportlab.platypus import SimpleDocTemplate, Table
 import logging
+
+from excelStyles import apply_excel_colors
 from tableStyling import create_table_data, apply_table_styles
 from openpyxl.styles import Alignment, Border, Side
 
@@ -27,6 +29,15 @@ def save_pdf(data, file_path, page_size, dynamic_cols, config):
         logging.error(f"Error building PDF: {e}")
 
 
+def apply_styles_excel(df, worksheet, config):
+    """Apply styles to Excel worksheet."""
+    set_row_heights(worksheet)
+    set_column_widths(df, worksheet)
+    apply_cell_alignment(df, worksheet, config)
+    apply_cell_borders(worksheet)
+    apply_excel_colors(worksheet, config)
+
+
 def save_excel(data, file_path, dynamic_cols, config):
     """Create an Excel report from the given data."""
     if data.empty:
@@ -49,14 +60,6 @@ def save_excel(data, file_path, dynamic_cols, config):
         logging.error(f"Error building Excel: {e}")
 
 
-def apply_styles_excel(df, worksheet, config):
-    """Apply styles to Excel worksheet."""
-    set_row_heights(worksheet)
-    set_column_widths(df, worksheet)
-    apply_cell_alignment(df, worksheet, config)
-    apply_cell_borders(worksheet)
-
-
 def set_row_heights(worksheet):
     normal_row_height = 25
     header_row_height = normal_row_height + 10
@@ -70,7 +73,7 @@ def set_row_heights(worksheet):
 def set_column_widths(df, worksheet):
     for col_idx, col in enumerate(df.columns, 1):
         max_length = max((len(str(x)) for x in df[col]), default=10)
-        adjusted_width = max_length + 3
+        adjusted_width = max_length + 5
         worksheet.column_dimensions[get_column_letter(col_idx)].width = adjusted_width
 
 
