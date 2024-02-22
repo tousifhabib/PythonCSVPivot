@@ -29,13 +29,13 @@ def save_pdf(data, file_path, page_size, dynamic_cols, config):
         logging.error(f"Error building PDF: {e}")
 
 
-def apply_styles_excel(df, worksheet, config):
+def apply_styles_excel(worksheet, config, df, dynamic_cols):
     """Apply styles to Excel worksheet."""
     set_row_heights(worksheet)
     set_column_widths(df, worksheet)
     apply_cell_alignment(df, worksheet, config)
     apply_cell_borders(worksheet)
-    apply_excel_colors(worksheet, config)
+    apply_excel_colors(worksheet, config, df, dynamic_cols)
 
 
 def save_excel(data, file_path, dynamic_cols, config):
@@ -52,7 +52,7 @@ def save_excel(data, file_path, dynamic_cols, config):
             df.to_excel(writer, sheet_name='Report', index=False)
             worksheet = writer.sheets['Report']
 
-            apply_styles_excel(df, worksheet, config)
+            apply_styles_excel(worksheet, config, df, dynamic_cols)
 
         logging.info("Excel generation completed successfully.")
 
