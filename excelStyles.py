@@ -1,8 +1,7 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 from openpyxl.styles import PatternFill, Font
 from openpyxl.worksheet.worksheet import Worksheet
 from pandas import DataFrame
-from tableDataProcessing import assign_subtotal_levels
 
 
 def create_fill(color: str) -> PatternFill:
@@ -18,7 +17,20 @@ def style_cell(cell, fill: PatternFill, font: Font):
     cell.font = font
 
 
-def apply_row_styles(worksheet: Worksheet, df: DataFrame, config: Dict[str, Any], dynamic_cols: list):
+def is_special_row_excel(row_values: List, dynamic_cols: list) -> bool:
+    # Check for explicit "Subtotal" or "Grand Total" markers
+    if "Subtotal" in row_values or "Grand Total" in row_values:
+        return True
+
+    for i, col_name in enumerate(dynamic_cols):
+        if i < len(row_values) - 1:
+            if row_values[i] and not row_values[i + 1]:
+                return True
+
+    return False
+
+
+def apply_row_styles(worksheet: Worksheet, config: Dict[str, Any], dynamic_cols: list):
     header_fill = create_fill(config['colors']['header']['background'])
     header_font = create_font(config['colors']['header']['text'], bold=True)
 
@@ -32,21 +44,20 @@ def apply_row_styles(worksheet: Worksheet, df: DataFrame, config: Dict[str, Any]
     grand_total_fill = create_fill(config['colors']['grand_total']['background'])
     grand_total_font = create_font(config['colors']['grand_total']['text'])
 
-    processed_df = df.copy()
-    assign_subtotal_levels(processed_df, dynamic_cols)
-
-    for row_idx, (row, level) in enumerate(zip(worksheet.iter_rows(min_row=2), processed_df['Subtotal_Level']),
-                                           start=2):
+    for row_idx, row in enumerate(worksheet.iter_rows(min_row=2), start=2):
         row_values = [cell.value for cell in row]
         is_grand_total_row = "Grand Total" in row_values
-        is_subtotal_row = level > 1 and not is_grand_total_row
+        is_subtotal_row = is_special_row_excel(row_values, dynamic_cols) and not is_grand_total_row
 
         for cell in row:
-            fill, font = (grand_total_fill, grand_total_font) if is_grand_total_row else \
-                (subtotal_fill, subtotal_font) if is_subtotal_row else \
-                    (default_fill, default_font)
+            if is_grand_total_row:
+                fill, font = grand_total_fill, grand_total_font
+            elif is_subtotal_row:
+                fill, font = subtotal_fill, subtotal_font
+            else:
+                fill, font = default_fill, default_font
             style_cell(cell, fill, font)
 
 
 def apply_excel_colors(worksheet: Worksheet, config: Dict[str, Any], df: DataFrame, dynamic_cols: list):
-    apply_row_styles(worksheet, df, config, dynamic_cols)
+    apply_row_styles(worksheet, config, dynamic_cols)
