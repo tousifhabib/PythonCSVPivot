@@ -1,6 +1,10 @@
 from typing import Dict, Any, List, Tuple
+
+import openpyxl
+import pandas as pd
 from openpyxl.styles import PatternFill, Font
 from openpyxl.cell import Cell
+from openpyxl.worksheet.cell_range import CellRange
 from openpyxl.worksheet.worksheet import Worksheet
 from pandas import DataFrame
 
@@ -55,3 +59,18 @@ def apply_row_styles(worksheet: Worksheet, config: Dict[str, Any], dynamic_cols:
 
 def apply_excel_colors(worksheet: Worksheet, config: Dict[str, Any], df: DataFrame, dynamic_cols: List[str]) -> None:
     apply_row_styles(worksheet, config, dynamic_cols)
+
+
+def merge_empty_cells(worksheet, df):
+    for col_idx, col in enumerate(df.columns, start=1):
+        start_row = None
+        for row_idx, value in enumerate(df[col], start=2):
+            if pd.isna(value) or value == '':
+                if start_row is None:
+                    start_row = row_idx
+            else:
+                if start_row is not None and row_idx - start_row >= 1:
+                    worksheet.merge_cells(start_row=start_row, start_column=col_idx, end_row=row_idx - 1, end_column=col_idx)
+                    start_row = None
+                else:
+                    start_row = None

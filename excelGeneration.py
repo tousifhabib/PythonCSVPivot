@@ -3,7 +3,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Border, Side
 import logging
 
-from excelStyles import apply_excel_colors
+from excelStyles import apply_excel_colors, merge_empty_cells
 from tableStyling import create_table_data
 
 logging.basicConfig(level=logging.DEBUG)
@@ -38,6 +38,7 @@ def apply_styles_excel(worksheet, config, df, dynamic_cols):
     apply_cell_alignment(df, worksheet, config)
     apply_cell_borders(worksheet)
     apply_excel_colors(worksheet, config, df, dynamic_cols)
+    merge_empty_cells(worksheet, df)
 
 
 def set_row_heights(worksheet):
