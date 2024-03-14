@@ -50,14 +50,27 @@ def main(csv_file_path, filters, group_cols, agg_func, agg_col, subtotal_col=Non
         print(f"An error occurred: {e}")
 
 
+# if __name__ == "__main__":
+#     csv_file_path = "/Users/ts-tousif.habib/Development/Repos/automatic-failure-verification/csv_export/full_report_240313_0958.csv"
+#     filters = {"result": "failed"}
+#     group_cols = ["errorType", "comment"]
+#     agg_func = "count"
+#     agg_col = "Count"
+#     subtotal_col = ["errorType"]
+#
+#     custom_page_size = (10 * inch, 20 * inch)
+#
+#     main(csv_file_path, filters, group_cols, agg_func, agg_col, subtotal_col, custom_page_size)
+
+
 if __name__ == "__main__":
-    csv_file_path = "/Users/ts-tousif.habib/Development/Repos/automatic-failure-verification/csv_export/full_report_240219_1119.csv"
+    csv_file_path = "/Users/ts-tousif.habib/Development/Repos/automatic-failure-verification/csv_export/full_report_240313_0958.csv"
     filters = {"result": "failed"}
-    group_cols = ["errorType", "comment"]
+    group_cols = ["feature", "errorType", "comment"]
     agg_func = "count"
     agg_col = "Count"
-    subtotal_col = ["errorType"]
+    subtotal_col = ["feature", "errorType"]
 
-    custom_page_size = (10 * inch, 20 * inch)
+    custom_page_size = (100 * inch, 200 * inch)
 
     main(csv_file_path, filters, group_cols, agg_func, agg_col, subtotal_col, custom_page_size)
