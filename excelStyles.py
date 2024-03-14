@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Set
 
 import openpyxl
 import pandas as pd
@@ -62,8 +62,12 @@ def apply_excel_colors(worksheet: Worksheet, config: Dict[str, Any], df: DataFra
 
 
 def merge_empty_cells(worksheet: Worksheet, df: pd.DataFrame) -> None:
-    print("DATAFRAME", df)
+    subtotal_rows, subtotal_levels = identify_subtotal_rows(df)
+    merge_first_column(worksheet, subtotal_rows, subtotal_levels)
+    merge_remaining_columns(worksheet, df, subtotal_rows, subtotal_levels)
 
+
+def identify_subtotal_rows(df: pd.DataFrame) -> (Set[int], Dict[int, int]):
     subtotal_rows = set()
     subtotal_levels = {}
     for col_idx, col in enumerate(df.columns[:-2], start=1):
@@ -82,55 +86,47 @@ def merge_empty_cells(worksheet: Worksheet, df: pd.DataFrame) -> None:
                 subtotal_rows.add(row_idx)
                 if col_idx == 1:
                     subtotal_levels[row_idx] = level
+    return subtotal_rows, subtotal_levels
 
-    print("subtotal rows", subtotal_rows)
-    print("subtotal levels", subtotal_levels)
 
-    start_row = 2
+def merge_first_column(worksheet: Worksheet, subtotal_rows: Set[int], subtotal_levels: Dict[int, int]) -> None:
+    start_row = 3
     prev_level = -1
     for row_idx in sorted(subtotal_rows):
         level = subtotal_levels.get(row_idx, -1)
-        print(f"Processing subtotal row: {row_idx}, level: {level}")
         if level > prev_level:
             if row_idx > start_row:
                 merge_cells(worksheet, start_row, 1, row_idx - 1)
-                print(f"Merged from {start_row} to {row_idx - 1} in column 1")
-            start_row = row_idx + 1  # Assign start_row to the next row after the subtotal row
+            start_row = row_idx + 1
         prev_level = level
 
     if start_row <= row_idx:
         merge_cells(worksheet, start_row, 1, row_idx)
-        print(f"Merged from {start_row} to {row_idx} in column 1")
 
+
+def merge_remaining_columns(worksheet: Worksheet, df: pd.DataFrame, subtotal_rows: Set[int],
+                            subtotal_levels: Dict[int, int]) -> None:
     for col_idx, col in enumerate(df.columns, start=1):
-        print(f"Processing column: {col_idx}")
         start_row = None
         for row_idx, value in enumerate(df[col], start=2):
             is_subtotal_row = row_idx in subtotal_rows
-            print(f"Row {row_idx}, value: {value}, is_subtotal: {is_subtotal_row}")
 
             if is_subtotal_row:
                 if start_row is not None and (row_idx - 1) != start_row:
                     merge_cells(worksheet, start_row, col_idx, row_idx - 1)
-                    print(f"Merged from {start_row} to {row_idx - 1} in column: {col_idx}")
                 start_row = row_idx + 1
             elif pd.isna(value) or value == '':
                 if start_row is None:
                     start_row = row_idx
-                    print(f"Found empty cell, start_row set to {start_row}")
             else:
                 if start_row is not None and col_idx > subtotal_levels.get(row_idx, 0) + 1:
                     merge_cells(worksheet, start_row, col_idx, row_idx - 1)
-                    print(f"Merged from {start_row} to {row_idx - 1} in column: {col_idx}")
                 start_row = None
 
         if start_row is not None and start_row <= row_idx:
             merge_cells(worksheet, start_row, col_idx, row_idx)
-            print(f"Merged from {start_row} to {row_idx} in column: {col_idx}")
 
 
 def merge_cells(worksheet: Worksheet, start_row: int, col_idx: int, end_row: int) -> None:
-    # Perform merging only if it spans more than one cell and does not include subtotal rows
     if end_row > start_row:
         worksheet.merge_cells(start_row=start_row, start_column=col_idx, end_row=end_row, end_column=col_idx)
-        print(f"Merged from {start_row} to {end_row} in column: {col_idx}")
