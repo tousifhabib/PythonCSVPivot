@@ -63,38 +63,31 @@ def apply_excel_colors(worksheet: Worksheet, config: Dict[str, Any], df: DataFra
 
 def merge_empty_cells(worksheet: Worksheet, df: pd.DataFrame) -> None:
     print("DATAFRAME", df)
+
+    subtotal_rows = {}
+    for col_idx, col in enumerate(df.columns, start=1):
+        for row_idx, value in enumerate(df[col], start=2):
+            if "Grand Total" in str(value):
+                subtotal_rows[row_idx] = col_idx
+
     for col_idx, col in enumerate(df.columns, start=1):
         start_row = None
         for row_idx, value in enumerate(df[col], start=2):
-            current_row = df.iloc[row_idx - 2]
-            previous_row = df.iloc[row_idx - 3] if row_idx > 2 else None
-            next_row = df.iloc[row_idx - 1] if row_idx < len(df) else None
-
-            if is_grand_total_row(current_row) or is_grand_total_row(next_row):
-                if start_row is not None and not is_grand_total_row(previous_row):
+            if row_idx in subtotal_rows and subtotal_rows[row_idx] >= col_idx:
+                if start_row is not None:
                     merge_cells(worksheet, start_row, col_idx, row_idx - 1)
-                    start_row = None
+                start_row = None
                 continue
 
-            if should_span(value, current_row, previous_row, next_row, col_idx):
+            if pd.isna(value) or value == '':
                 start_row = start_row or row_idx
             else:
-                if start_row is not None and row_idx - start_row > 1 and not is_grand_total_row(previous_row):
+                if start_row is not None and row_idx - start_row > 1:
                     merge_cells(worksheet, start_row, col_idx, row_idx - 1)
-                    start_row = None
+                start_row = None
 
-        if start_row is not None and row_idx - start_row > 1 and not is_grand_total_row(df.iloc[row_idx - 1]):
+        if start_row is not None and row_idx - start_row > 1:
             merge_cells(worksheet, start_row, col_idx, row_idx)
-
-
-def should_span(cell_value: any, current_row: pd.Series, previous_row: pd.Series, next_row: pd.Series, col_idx: int) -> bool:
-    return (
-        pd.isna(cell_value) or cell_value == ''
-    ) and all(pd.isna(current_row[i]) or current_row[i] == '' for i in range(col_idx)) and not any(is_grand_total_row(row) for row in (current_row, previous_row, next_row) if row is not None)
-
-
-def is_grand_total_row(row: pd.Series) -> bool:
-    return any("Grand Total" in str(cell) for cell in row)
 
 
 def merge_cells(worksheet: Worksheet, start_row: int, col_idx: int, end_row: int) -> None:
