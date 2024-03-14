@@ -64,14 +64,12 @@ def apply_excel_colors(worksheet: Worksheet, config: Dict[str, Any], df: DataFra
 def merge_empty_cells(worksheet: Worksheet, df: pd.DataFrame) -> None:
     print("DATAFRAME", df)
 
-    # Detect subtotal rows in the 'feature' and 'errorType' columns only
     subtotal_rows = set()
     subtotal_levels = {}
-    for col_idx, col in enumerate(df.columns[:-2], start=1):  # Exclude last 2 columns from subtotal check
+    for col_idx, col in enumerate(df.columns[:-2], start=1):
         blank_seen = False
         level = 0
         for row_idx, value in enumerate(df[col], start=2):
-            # Mark the first non-empty row after a blank as a subtotal row
             if pd.isna(value) or value == '':
                 blank_seen = True
             elif blank_seen:
@@ -80,40 +78,56 @@ def merge_empty_cells(worksheet: Worksheet, df: pd.DataFrame) -> None:
                     subtotal_levels[row_idx] = level
                 blank_seen = False
                 level += 1
-            # Also, add 'Grand Total' row
-            if "Total" in str(value):
+            if "Grand Total" in str(value):
                 subtotal_rows.add(row_idx)
                 if col_idx == 1:
                     subtotal_levels[row_idx] = level
 
     print("subtotal rows", subtotal_rows)
+    print("subtotal levels", subtotal_levels)
 
-    # Iterate through the dataframe to find ranges to merge
+    start_row = 2
+    prev_level = -1
+    for row_idx in sorted(subtotal_rows):
+        level = subtotal_levels.get(row_idx, -1)
+        print(f"Processing subtotal row: {row_idx}, level: {level}")
+        if level > prev_level:
+            if row_idx > start_row:
+                merge_cells(worksheet, start_row, 1, row_idx - 1)
+                print(f"Merged from {start_row} to {row_idx - 1} in column 1")
+            start_row = row_idx + 1  # Assign start_row to the next row after the subtotal row
+        prev_level = level
+
+    if start_row <= row_idx:
+        merge_cells(worksheet, start_row, 1, row_idx)
+        print(f"Merged from {start_row} to {row_idx} in column 1")
+
     for col_idx, col in enumerate(df.columns, start=1):
+        print(f"Processing column: {col_idx}")
         start_row = None
         for row_idx, value in enumerate(df[col], start=2):
             is_subtotal_row = row_idx in subtotal_rows
+            print(f"Row {row_idx}, value: {value}, is_subtotal: {is_subtotal_row}")
 
-            # If the row is a subtotal row, reset start_row based on the subtotal level
             if is_subtotal_row:
                 if start_row is not None and (row_idx - 1) != start_row:
                     merge_cells(worksheet, start_row, col_idx, row_idx - 1)
-                start_row = None
-                if col_idx == 1:
-                    start_row = row_idx
-            # If the cell is empty, potentially start a new merge range
+                    print(f"Merged from {start_row} to {row_idx - 1} in column: {col_idx}")
+                start_row = row_idx + 1
             elif pd.isna(value) or value == '':
                 if start_row is None:
                     start_row = row_idx
-            # If the cell is not empty, end the current merge range
+                    print(f"Found empty cell, start_row set to {start_row}")
             else:
-                if start_row is not None and col_idx > 1:
+                if start_row is not None and col_idx > subtotal_levels.get(row_idx, 0) + 1:
                     merge_cells(worksheet, start_row, col_idx, row_idx - 1)
+                    print(f"Merged from {start_row} to {row_idx - 1} in column: {col_idx}")
                 start_row = None
 
-        # After the last row, merge any remaining cells that are not in subtotal rows
-        if start_row is not None and not is_subtotal_row:
+        if start_row is not None and start_row <= row_idx:
             merge_cells(worksheet, start_row, col_idx, row_idx)
+            print(f"Merged from {start_row} to {row_idx} in column: {col_idx}")
+
 
 def merge_cells(worksheet: Worksheet, start_row: int, col_idx: int, end_row: int) -> None:
     # Perform merging only if it spans more than one cell and does not include subtotal rows
