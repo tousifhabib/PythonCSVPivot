@@ -1,14 +1,10 @@
 import logging
 from typing import Dict, Any, List, Tuple, Set
-
-import openpyxl
 import pandas as pd
 from openpyxl.styles import PatternFill, Font
 from openpyxl.cell import Cell
-from openpyxl.worksheet.cell_range import CellRange
 from openpyxl.worksheet.worksheet import Worksheet
 from pandas import DataFrame
-
 
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 
@@ -78,7 +74,7 @@ def is_special_row_excel(row_values: List[Any], dynamic_cols: List[str]) -> bool
 
     for i, cell in enumerate(row_values[1:], start=1):  # start from the second cell
         if cell:  # if the cell is not empty, check the previous one
-            if i == 1 or (i > 1 and not row_values[i-1]):  # if the first cell is empty or previous cell is empty
+            if i == 1 or (i > 1 and not row_values[i - 1]):  # if the first cell is empty or previous cell is empty
                 return True
     return False
 
