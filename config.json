@@ -14,8 +14,12 @@
       "background": "777777",
       "text": "FFFFFF"
     },
-    "subtotal": {
+    "subtotal_1": {
       "background": "DDDDDD",
+      "text": "000000"
+    },
+    "subtotal_2": {
+      "background": "ADD8E6",
       "text": "000000"
     },
     "grand_total": {
