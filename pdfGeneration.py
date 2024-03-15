@@ -1,4 +1,6 @@
 import logging
+
+from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table
 from excelStyles import calculate_dynamic_page_size
 from tableStyling import create_table_data, apply_table_styles
@@ -11,18 +13,25 @@ def save_pdf(data, file_path, dynamic_cols, config):
         logging.warning("No data to display in the PDF.")
         return
 
+    paginate = config.get("paginate", True)
+
     try:
         table_data = create_table_data(data, dynamic_cols)
         table = Table(table_data)
         table_width, table_height = table.wrap(0, 0)
 
-        dynamic_page_size = calculate_dynamic_page_size(table_width, table_height, config)
+        if paginate:
+            dynamic_page_size = calculate_dynamic_page_size(table_width, table_height, config)
+        else:
+            dynamic_page_size = (letter[0], 5000)
+
         apply_table_styles(table, table_data, dynamic_cols, config)
         build_pdf(file_path, table, dynamic_page_size)
 
         logging.info("PDF generation completed successfully.")
     except Exception as e:
         logging.error(f"Error building PDF: {e}")
+
 
 
 def build_pdf(file_path, table, page_size):
