@@ -37,7 +37,7 @@ def apply_styles_excel(worksheet, config, df, dynamic_cols):
     set_column_widths(df, worksheet)
     apply_cell_alignment(df, worksheet, config)
     apply_cell_borders(worksheet)
-    apply_excel_colors(worksheet, config, df, dynamic_cols)
+    apply_excel_colors(worksheet, config, dynamic_cols)
     merge_empty_cells(worksheet, df)
 
 
