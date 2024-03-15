@@ -1,9 +1,7 @@
 import logging
 from reportlab.platypus import SimpleDocTemplate, Table
-
 from excelStyles import calculate_dynamic_page_size
 from tableStyling import create_table_data, apply_table_styles
-
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -30,6 +28,7 @@ def save_pdf(data, file_path, dynamic_cols, config):
 def build_pdf(file_path, table, page_size):
     doc = SimpleDocTemplate(file_path, pagesize=page_size)
     doc.build([table])
+
 
 def dynamic_columns_for_pdf(group_cols, agg_col):
     return group_cols + [agg_col]
