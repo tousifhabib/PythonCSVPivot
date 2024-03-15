@@ -23,7 +23,7 @@ def save_excel(data, file_path, dynamic_cols, config):
             df.to_excel(writer, sheet_name='Report', index=False)
             worksheet = writer.sheets['Report']
 
-            apply_styles_excel(worksheet, config, df, dynamic_cols)
+            apply_styles_excel(worksheet, config, df)
 
         logging.info("Excel generation completed successfully.")
 
@@ -31,13 +31,13 @@ def save_excel(data, file_path, dynamic_cols, config):
         logging.error(f"Error building Excel: {e}")
 
 
-def apply_styles_excel(worksheet, config, df, dynamic_cols):
+def apply_styles_excel(worksheet, config, df):
     """Apply styles to Excel worksheet."""
     set_row_heights(worksheet)
     set_column_widths(df, worksheet)
     apply_cell_alignment(df, worksheet, config)
     apply_cell_borders(worksheet)
-    apply_excel_colors(worksheet, config, dynamic_cols)
+    apply_excel_colors(worksheet, config)
     merge_empty_cells(worksheet, df)
 
 

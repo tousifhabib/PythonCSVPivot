@@ -23,13 +23,16 @@ def get_style_mappings(config: Dict[str, Any]) -> Dict[str, Tuple[PatternFill, F
             for key, value in config['colors'].items()}
 
 
-def determine_row_style(row_values: List[Any], style_mappings: Dict[str, Tuple[PatternFill, Font]]) -> Tuple[PatternFill, Font]:
+def determine_row_style(row_values: List[Any], style_mappings: Dict[str, Tuple[PatternFill, Font]]) -> Tuple[
+    Tuple[PatternFill, Font], int]:
     if "Grand Total" in row_values:
-        return style_mappings['grand_total']
+        return style_mappings['grand_total'], 1
     if any(keyword in row_values for keyword in ["Grand Total"]):
-        return style_mappings['grand_total']
+        return style_mappings['grand_total'], 1
     level = next((i for i, value in enumerate(row_values[:-2], 1) if value), 0)
-    return style_mappings.get(f'subtotal_{level}', style_mappings['default']) if level else style_mappings['default']
+    if level:
+        return style_mappings.get(f'subtotal_{level}', style_mappings['default']), level
+    return style_mappings['default'], 1
 
 
 def is_special_row(row_values: List[Any]) -> bool:
@@ -42,12 +45,16 @@ def apply_row_styles(worksheet: Worksheet, config: Dict[str, Any]) -> None:
     style_mappings = get_style_mappings(config)
     for row_index, row in enumerate(worksheet.iter_rows(), start=1):
         row_values = [cell.value for cell in row]
-        fill, font = style_mappings['header'] if row_index == 1 else determine_row_style(row_values, style_mappings)
-        for cell in row:
+        if row_index == 1:
+            fill, font = style_mappings['header']
+            start_col = 1
+        else:
+            (fill, font), start_col = determine_row_style(row_values, style_mappings)
+        for cell in row[start_col - 1:]:
             style_cell(cell, fill, font)
 
 
-def apply_excel_colors(worksheet: Worksheet, config: Dict[str, Any], dynamic_columns: List[str]) -> None:
+def apply_excel_colors(worksheet: Worksheet, config: Dict[str, Any]) -> None:
     apply_row_styles(worksheet, config)
 
 
