@@ -14,21 +14,18 @@ def load_config():
 
 
 def create_pdf_file_path(csv_file_path):
-    """Create a file path for the PDF based on the CSV file path and current timestamp."""
     base_dir = os.path.dirname(csv_file_path)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     return os.path.join(base_dir, f"{timestamp}_PivotTable.pdf")
 
 
 def create_excel_file_path(csv_file_path):
-    """Generates the file path for the Excel file."""
     base_dir = os.path.dirname(csv_file_path)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     return os.path.join(base_dir, f"{timestamp}_PivotTable.xlsx")
 
 
 def main(csv_file_path, filters, group_cols, agg_func, agg_col, subtotal_col=None, page_size=letter):
-    """Main function to process data and generate reports."""
     config = load_config()
     try:
         df = load_data(csv_file_path)
@@ -71,6 +68,6 @@ if __name__ == "__main__":
     agg_col = "Count"
     subtotal_col = ["feature", "errorType"]
 
-    custom_page_size = (100 * inch, 200 * inch)
+    custom_page_size = (20 * inch, 10 * inch)
 
     main(csv_file_path, filters, group_cols, agg_func, agg_col, subtotal_col, custom_page_size)

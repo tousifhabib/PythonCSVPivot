@@ -10,7 +10,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def save_excel(data, file_path, dynamic_cols, config):
-    """Create an Excel report from the given data."""
     if data.empty:
         logging.warning("No data to display in the Excel file.")
         return
@@ -32,7 +31,6 @@ def save_excel(data, file_path, dynamic_cols, config):
 
 
 def apply_styles_excel(worksheet, config, df):
-    """Apply styles to Excel worksheet."""
     set_row_heights(worksheet)
     set_column_widths(df, worksheet)
     apply_cell_alignment(df, worksheet, config)
@@ -59,7 +57,6 @@ def set_column_widths(df, worksheet):
 
 
 def apply_cell_borders(worksheet):
-    """Apply borders to all cells in the worksheet."""
     thin_border = Border(
         left=Side(style='thin'),
         right=Side(style='thin'),

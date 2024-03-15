@@ -8,7 +8,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def save_pdf(data, file_path, page_size, dynamic_cols, config):
-    """Generate a PDF with the given data and specifications."""
     if data.empty:
         logging.warning("No data to display in the PDF.")
         return
@@ -27,5 +26,4 @@ def save_pdf(data, file_path, page_size, dynamic_cols, config):
 
 
 def dynamic_columns_for_pdf(group_cols, agg_col):
-    """Determine dynamic columns for the PDF based on grouping and aggregate columns."""
     return group_cols + [agg_col]
