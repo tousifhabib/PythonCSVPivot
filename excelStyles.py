@@ -3,7 +3,22 @@ import pandas as pd
 from openpyxl.styles import PatternFill, Font
 from openpyxl.cell import Cell
 from openpyxl.worksheet.worksheet import Worksheet
+from reportlab.lib import units
+from reportlab.lib.pagesizes import letter
 
+
+def calculate_dynamic_page_size(table_width, table_height, config):
+    margins = config.get("margins", {"top": 1, "bottom": 1, "left": 1, "right": 1})
+    total_width = table_width + (margins["left"] + margins["right"]) * units.inch
+    total_height = table_height + (margins["top"] + margins["bottom"]) * units.inch
+
+    min_page_size = config.get("min_page_size", letter)
+    max_page_size = config.get("max_page_size", (letter[0] * 2, letter[1] * 2))
+
+    return (
+        max(min(total_width, max_page_size[0]), min_page_size[0]),
+        max(min(total_height, max_page_size[1]), min_page_size[1])
+    )
 
 def create_fill(color: str) -> PatternFill:
     return PatternFill(start_color=color, end_color=color, fill_type="solid")

@@ -25,7 +25,7 @@ def create_excel_file_path(csv_file_path):
     return os.path.join(base_dir, f"{timestamp}_PivotTable.xlsx")
 
 
-def main(csv_file_path, filters, group_cols, agg_func, agg_col, subtotal_col=None, page_size=letter):
+def main(csv_file_path, filters, group_cols, agg_func, agg_col, subtotal_col=None):
     config = load_config()
     try:
         df = load_data(csv_file_path)
@@ -38,7 +38,7 @@ def main(csv_file_path, filters, group_cols, agg_func, agg_col, subtotal_col=Non
         dynamic_columns = dynamic_columns_for_pdf(group_cols, agg_col)
 
         pdf_file_path = create_pdf_file_path(csv_file_path)
-        save_pdf(final_data, pdf_file_path, page_size, dynamic_columns, config)
+        save_pdf(final_data, pdf_file_path, dynamic_columns, config)
 
         excel_file_path = create_excel_file_path(csv_file_path)
         save_excel(final_data, excel_file_path, dynamic_columns, config)
@@ -68,6 +68,5 @@ if __name__ == "__main__":
     agg_col = "Count"
     subtotal_col = ["feature", "errorType"]
 
-    custom_page_size = (20 * inch, 10 * inch)
 
-    main(csv_file_path, filters, group_cols, agg_func, agg_col, subtotal_col, custom_page_size)
+    main(csv_file_path, filters, group_cols, agg_func, agg_col, subtotal_col)
