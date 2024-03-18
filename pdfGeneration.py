@@ -28,7 +28,6 @@ def save_pdf(data, file_path, dynamic_cols, config):
         logging.error(f"Error building PDF: {e}")
 
 
-
 def build_pdf(file_path, table, page_size):
     doc = SimpleDocTemplate(file_path, pagesize=page_size)
     doc.build([table])
