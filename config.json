@@ -1,5 +1,5 @@
 {
-  "paginate": true,
+  "paginate": false,
   "alignment": {
     "global": "CENTER",
     "header": "CENTER",
