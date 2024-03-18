@@ -128,7 +128,10 @@ def merge_remaining_columns(worksheet, df: pd.DataFrame, subtotal_rows: Set[int]
                             subtotal_levels: Dict[int, int]) -> None:
     for col_idx, col in enumerate(df.columns[:-2], start=1):
         start_row = None
+        prev_subtotal_row = None
         prev_subtotal_level = -1
+        data_row_found = False
+
         for row_idx, value in enumerate(df[col], start=2):
             is_subtotal_row = row_idx in subtotal_rows
             current_subtotal_level = subtotal_levels.get(row_idx, -1)
@@ -136,17 +139,21 @@ def merge_remaining_columns(worksheet, df: pd.DataFrame, subtotal_rows: Set[int]
             if is_subtotal_row:
                 if start_row is not None and row_idx - 1 != start_row and current_subtotal_level > prev_subtotal_level:
                     merge_cells(worksheet, start_row, col_idx, row_idx - 1)
+                elif prev_subtotal_row is not None and current_subtotal_level == prev_subtotal_level and not data_row_found:
+                    merge_cells(worksheet, prev_subtotal_row + 1, col_idx, row_idx - 1)
                 start_row = None
+                prev_subtotal_row = row_idx
                 prev_subtotal_level = current_subtotal_level
+                data_row_found = False
             elif not pd.isna(value) and value != '':
                 if start_row is not None:
                     merge_cells(worksheet, start_row, col_idx, row_idx - 1)
                 start_row = None
+                data_row_found = True
             elif start_row is None:
                 start_row = row_idx
 
         if start_row is not None and start_row <= len(df):
-            print(f"Merging cells in column {col_idx} from row {start_row} to {len(df) + 1}")  # Debug statement
             merge_cells(worksheet, start_row, col_idx, len(df) + 1)
 
 
