@@ -126,17 +126,27 @@ def merge_first_column(worksheet, subtotal_rows: Set[int], subtotal_levels: Dict
 
 def merge_remaining_columns(worksheet, df: pd.DataFrame, subtotal_rows: Set[int],
                             subtotal_levels: Dict[int, int]) -> None:
-    for col_idx, col in enumerate(df.columns, start=1):
+    for col_idx, col in enumerate(df.columns[:-2], start=1):
         start_row = None
+        prev_subtotal_level = -1
         for row_idx, value in enumerate(df[col], start=2):
             is_subtotal_row = row_idx in subtotal_rows
-            if is_subtotal_row or not pd.isna(value) and value != '':
-                if start_row is not None and row_idx - 1 != start_row and col_idx > subtotal_levels.get(row_idx, 0) + 1:
+            current_subtotal_level = subtotal_levels.get(row_idx, -1)
+
+            if is_subtotal_row:
+                if start_row is not None and row_idx - 1 != start_row and current_subtotal_level > prev_subtotal_level:
+                    merge_cells(worksheet, start_row, col_idx, row_idx - 1)
+                start_row = None
+                prev_subtotal_level = current_subtotal_level
+            elif not pd.isna(value) and value != '':
+                if start_row is not None:
                     merge_cells(worksheet, start_row, col_idx, row_idx - 1)
                 start_row = None
             elif start_row is None:
                 start_row = row_idx
+
         if start_row is not None and start_row <= len(df):
+            print(f"Merging cells in column {col_idx} from row {start_row} to {len(df) + 1}")  # Debug statement
             merge_cells(worksheet, start_row, col_idx, len(df) + 1)
 
 
