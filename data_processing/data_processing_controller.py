@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, Union, Tuple, Optional, List
+from typing import Dict, List, Tuple, Optional, Union
 
 import pandas as pd
 
@@ -12,68 +12,78 @@ from output_generation.pdf.pdfGeneration import dynamic_columns_for_pdf, save_pd
 
 logger = logging.getLogger(__name__)
 
+FileType = Union[str, Dict]
+
 
 def process_data_and_generate_files(config: Dict) -> None:
     try:
-        csv_path = config["data"]["csv_file_path"]
-        validate_csv_path(csv_path)
-        df, file_data = load_data(csv_path), {"pdf": "pdf", "excel": "xlsx"}
-
-        if df.empty:
-            logger.warning("No data found in the CSV file.")
+        csv_path, processed_data = load_and_process_data(config["data"], source_type='csv')
+        if processed_data is None:
             return
 
-        processed_data = preprocess_data(
-            df,
-            filters=config["data"]["filters"],
-            group_cols=config["data"]["group_cols"],
-            agg_func=config["data"]["agg_func"]
-        )
-        final_data = calculate_totals(processed_data, config["data"]["subtotal_col"], config["data"]["agg_col"])
-        dynamic_columns = dynamic_columns_for_pdf(config["data"]["group_cols"], config["data"]["agg_col"])
-
-        save_files(csv_path, file_data, final_data, dynamic_columns, config["styles"])
-
-    except KeyError as e:
-        logger.error(f"Error processing data: {str(e)}")
+        final_data, dynamic_columns = prepare_data_for_output(processed_data, config["data"])
+        save_output_files(csv_path, final_data, dynamic_columns, config["styles"], file_types=["pdf", "xlsx"])
+    except Exception as e:
+        logger.error(f"Failed to process and generate files: {e}", exc_info=True)
 
 
-def save_files(csv_path: str, file_data: Dict[str, str], final_data: pd.DataFrame,
-               dynamic_columns: List[str], styles: Dict) -> None:
-    for file_type, extension in file_data.items():
-        file_path = create_file_path(csv_path, extension)
+def load_and_process_data(data_config: Dict, source_type: str = 'csv') -> Tuple[str, Optional[pd.DataFrame]]:
+    if source_type == 'csv':
+        csv_path = data_config["csv_file_path"]
+        validate_csv_path(csv_path)
+        df = load_data(csv_path)
+    else:  # Add logic for other types if necessary
+        raise ValueError(f"Unsupported source type: {source_type}")
+
+    if df.empty:
+        logger.warning("No data found in the CSV file.")
+        return csv_path, None
+
+    return csv_path, preprocess_and_calculate(df, data_config)
+
+
+def preprocess_and_calculate(df: pd.DataFrame, data_config: Dict) -> pd.DataFrame:
+    processed_data = preprocess_data(
+        df,
+        filters=data_config["filters"],
+        group_cols=data_config["group_cols"],
+        agg_func=data_config["agg_func"]
+    )
+    return calculate_totals(processed_data, data_config["subtotal_col"], data_config["agg_col"])
+
+
+def prepare_data_for_output(df: pd.DataFrame, data_config: Dict) -> Tuple[pd.DataFrame, List[str]]:
+    dynamic_columns = dynamic_columns_for_pdf(data_config["group_cols"], data_config["agg_col"])
+    return df, dynamic_columns
+
+
+def save_output_files(base_path: str, final_data: pd.DataFrame, dynamic_columns: List[str], styles: Dict,
+                      file_types: List[str]) -> None:
+    for file_type in file_types:
+        file_path = create_file_path(base_path, "pdf" if file_type == "pdf" else "xlsx")
         save_file = save_pdf if file_type == "pdf" else save_excel
         save_file(final_data, file_path, dynamic_columns, styles)
-        logger.info(f"{file_type.upper()} file built successfully.")
+        logger.info(f"{file_type.upper()} file generated successfully at {file_path}.")
 
 
-def process_json_data_and_generate_files(config: Dict, json_data: Union[str, Dict]) -> Tuple[
-    Optional[str], Optional[str]]:
+def process_json_data_and_generate_files(config: Dict, json_data: FileType) -> Tuple[Optional[str], Optional[str]]:
     try:
         df = extract_dataframe_from_json(json_data)
-
         if df.empty:
             logger.warning("No data found in the JSON.")
             return None, None
 
-        processed_data = preprocess_data(
-            df,
-            filters=config["data"]["filters"],
-            group_cols=config["data"]["group_cols"],
-            agg_func=config["data"]["agg_func"]
-        )
-        final_data = calculate_totals(processed_data, config["data"]["subtotal_col"], config["data"]["agg_col"])
-        dynamic_columns = dynamic_columns_for_pdf(config["data"]["group_cols"], config["data"]["agg_col"])
+        processed_data = preprocess_and_calculate(df, config["data"])  # Directly use the DataFrame from JSON.
+        if processed_data is None:
+            return None, None
 
+        final_data, dynamic_columns = prepare_data_for_output(processed_data, config["data"])
         pdf_file, excel_file = create_file_paths("data")
-        save_pdf(final_data, pdf_file, dynamic_columns, config["styles"])
-        save_excel(final_data, excel_file, dynamic_columns, config["styles"])
+        save_output_files("data", final_data, dynamic_columns, config["styles"], file_types=["pdf", "xlsx"])
 
-        logger.info("PDF and Excel files built successfully.")
         return pdf_file, excel_file
-
-    except (KeyError, json.JSONDecodeError) as e:
-        logger.error(f"Error processing JSON data: {str(e)}")
+    except Exception as e:
+        logger.error(f"Failed to process JSON data: {e}", exc_info=True)
         return None, None
 
 
