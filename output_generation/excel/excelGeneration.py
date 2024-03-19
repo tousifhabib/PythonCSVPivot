@@ -4,7 +4,7 @@ from openpyxl.styles import Alignment, Border, Side
 import logging
 
 from excelStyles import apply_excel_colors, merge_empty_cells
-from tableStyling import create_table_data
+from output_generation.pdf.tableStyling import create_table_data
 
 logging.basicConfig(level=logging.DEBUG)
 

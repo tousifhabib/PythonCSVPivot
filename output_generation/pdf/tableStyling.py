@@ -1,5 +1,5 @@
-from tableDataProcessing import preprocess_dataframe, assign_subtotal_levels, clean_up_columns, format_table_data
-from tableStyleEnhancements import apply_span_styles, apply_special_row_styles, apply_base_styles
+from data_processing.tableDataProcessing import preprocess_dataframe, assign_subtotal_levels, clean_up_columns, format_table_data
+from output_generation.pdf.tableStyleEnhancements import apply_span_styles, apply_special_row_styles, apply_base_styles
 
 
 def create_table_data(df, dynamic_cols):
