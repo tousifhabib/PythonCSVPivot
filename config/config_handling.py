@@ -1,8 +1,9 @@
 import json
+from pathlib import Path
 from typing import Dict
 
 
-def read_config(config_file: str) -> Dict:
+def read_config(config_file: Path) -> Dict:
     with open(config_file, 'r') as file:
         return json.load(file)
 

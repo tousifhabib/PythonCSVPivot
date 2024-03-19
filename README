@@ -1,0 +1,33 @@
+/usr/bin/python3 main.py --json-data '{
+  "data": [
+      {
+    "feature": "mall_kvs_2.0/request/agg",
+    "file": "__tests__/mall_kvs_2.0/request/agg/agg_post_request_optimized_bulk.js:14",
+    "caseId": "AGG_API_Bulk_Optimized_Req-Reg_01_01_01 AGG_Bulk_Optimized_HTTP Header_X-Trace-Id_Valid_Length=36 (Max)\\neg.54947df8-0e9e-4471-a2f9-9af509fb5889",
+    "errorType": "Validation Error",
+    "comment": "Invalid X-Trace-Id length",
+    "result": "failed"
+  },
+  {
+    "feature": "mall_kvs_2.0/request/agg",
+    "file": "__tests__/mall_kvs_2.0/request/agg/agg_post_request_optimized_bulk.js:14",
+    "caseId": "AGG_API_Bulk_Optimized_Req-Reg_01_01_02 AGG_Bulk_Optimized_HTTP Header_X-Trace-Id_Valid_Length=36 (Max) and X-Trace-Id is in not UUID format\\neg.54947df-0e9e-4471-a2f9-9af509fb58899",
+    "errorType": "Validation Error",
+    "comment": "Invalid X-Trace-Id format",
+    "result": "failed"
+  },
+  {
+    "feature": "mall_kvs_2.0/request/agg",
+    "file": "__tests__/mall_kvs_2.0/request/agg/agg_post_request_optimized_bulk.js:14",
+    "caseId": "AGG_API_Bulk_Optimized_Req-Reg_01_01_03 AGG_Bulk_Optimized_HTTP Header_X-Trace-Id_Valid_Length<36 (35)\\neg.54947df8-0e9e-4471-a2f9-9af509fb588",
+    "errorType": "Validation Error",
+    "comment": "Invalid X-Trace-Id length",
+    "result": "failed"
+  }
+  ]
+}'
+
+
+
+
+/usr/bin/python3 main.py --api
