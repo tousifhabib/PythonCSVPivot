@@ -1,8 +1,10 @@
 import pandas as pd
+
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
 pd.set_option('display.max_colwidth', None)
+
 
 def load_data(file_path):
     try:
@@ -82,7 +84,6 @@ def prepare_subtotal_rows(grouped_data, subtotal_cols, agg_col):
 
 
 def calculate_totals(grouped_data, subtotal_cols, agg_col):
-
     original_agg_sum = grouped_data[agg_col].sum()
 
     if subtotal_cols:
@@ -98,4 +99,3 @@ def calculate_totals(grouped_data, subtotal_cols, agg_col):
     final_data = final_data[columns]
 
     return final_data
-
