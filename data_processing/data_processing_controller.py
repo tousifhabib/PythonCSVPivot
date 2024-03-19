@@ -58,12 +58,22 @@ def prepare_data_for_output(df: pd.DataFrame, data_config: Dict) -> Tuple[pd.Dat
 
 
 def save_output_files(base_path: str, final_data: pd.DataFrame, dynamic_columns: List[str], styles: Dict,
-                      file_types: List[str]) -> None:
+                      file_types: List[str]) -> Tuple[Optional[str], Optional[str]]:
+    pdf_file = None
+    excel_file = None
+
     for file_type in file_types:
         file_path = create_file_path(base_path, "pdf" if file_type == "pdf" else "xlsx")
         save_file = save_pdf if file_type == "pdf" else save_excel
         save_file(final_data, file_path, dynamic_columns, styles)
         logger.info(f"{file_type.upper()} file generated successfully at {file_path}.")
+
+        if file_type == "pdf":
+            pdf_file = file_path
+        else:
+            excel_file = file_path
+
+    return pdf_file, excel_file
 
 
 def process_json_data_and_generate_files(config: Dict, json_data: FileType) -> Tuple[Optional[str], Optional[str]]:

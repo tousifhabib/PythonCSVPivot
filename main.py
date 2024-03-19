@@ -1,7 +1,9 @@
 import argparse
+import io
 import json
+import zipfile
 from pathlib import Path
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 import logging
 
 from config import config_handling
@@ -25,10 +27,22 @@ def generate_files():
 
     pdf_file, excel_file = data_processing_controller.process_json_data_and_generate_files(config, json_data)
 
-    return jsonify({
-        'pdf_file': pdf_file,
-        'excel_file': excel_file
-    })
+    if pdf_file and excel_file:
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+            zip_file.write(pdf_file, arcname=Path(pdf_file).name)
+            zip_file.write(excel_file, arcname=Path(excel_file).name)
+
+        zip_buffer.seek(0)
+
+        return send_file(
+            zip_buffer,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name='output_files.zip'
+        )
+    else:
+        return jsonify({'error': 'Failed to generate files'}), 500
 
 
 def run_api():
