@@ -2,8 +2,7 @@ import pandas as pd
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Border, Side
 import logging
-
-from excelStyles import apply_excel_colors, merge_empty_cells
+from output_generation.excel.excelStyles import apply_excel_colors, merge_empty_cells
 from output_generation.pdf.tableStyling import create_table_data
 
 logging.basicConfig(level=logging.DEBUG)

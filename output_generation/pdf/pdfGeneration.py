@@ -1,7 +1,7 @@
 import logging
 from reportlab.platypus import SimpleDocTemplate, Table
 from output_generation.excel.excelStyles import calculate_dynamic_page_size
-from tableStyling import create_table_data, apply_table_styles
+from output_generation.pdf.tableStyling import create_table_data, apply_table_styles
 
 logging.basicConfig(level=logging.DEBUG)
 
