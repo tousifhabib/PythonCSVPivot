@@ -104,18 +104,18 @@ def apply_column_span(table, table_data, col_index, dynamic_cols):
 
 
 def is_special_row(row_data, dynamic_cols, row_num, table_data):
-    is_subtotal_or_total = "Subtotal" in row_data or "Grand Total" in row_data
-    if row_num > 0 and not is_subtotal_or_total:
+    is_total = "Grand Total" in row_data
+    if row_num > 0 and not is_total:
         if row_data[0] != "" and all(row_data[i] == "" for i in range(1, len(dynamic_cols) - 1)):
             prev_row_data = table_data[row_num - 1]
             if prev_row_data[0] != row_data[0] and not all(
                     prev_row_data[i] == "" for i in range(1, len(dynamic_cols) - 1)):
                 return True
-    return is_subtotal_or_total
+    return is_total
 
 
 def should_span(cell_value, row_data):
-    return cell_value == "" and not ("Subtotal" in row_data or "Grand Total" in row_data)
+    return cell_value == "" and not ("Grand Total" in row_data)
 
 
 def span_cells(table, col_index, start_row, end_row):
