@@ -110,26 +110,31 @@ def identify_subtotal_rows_new(df: pd.DataFrame) -> Tuple[Set[int], Dict[int, in
 def merge_cells_new(worksheet, df: pd.DataFrame, subtotal_rows: Set[int], subtotal_levels: Dict[int, int]) -> None:
     num_columns = len(df.columns)
 
-    # Adjust to iterate from right to left, excluding the value column and the last subtotal level
-    for col_idx in range(num_columns - 2, 0,
-                         -1):  # Start from the second to last column (excluding value column) and move left
+    for col_idx in range(num_columns - 2, 0, -1):
+        print(f"\n-- Processing Column: {col_idx}")
         start_row = None
-        for row_idx, value in enumerate(df.iloc[:, col_idx - 1], start=2):  # Adjust column index for 0-based indexing
-            is_subtotal_row = row_idx in subtotal_rows
-            correct_level_to_merge = subtotal_levels.get(row_idx, float('inf')) > col_idx
+        for idx, value in enumerate(df.iloc[:, col_idx - 1], start=2):
+            print(f"\n- Processing row: {idx}")
+            is_subtotal_row = idx in subtotal_rows and subtotal_levels[idx] <= col_idx
+            is_empty_row = pd.isna(value) or value == ''
 
-            if not is_subtotal_row and (pd.isna(value) or value == '') and correct_level_to_merge:
-                if start_row is None:
-                    start_row = row_idx
+            if idx in subtotal_rows:
+                correct_level_to_merge = subtotal_levels[idx] > col_idx
             else:
-                if start_row is not None and row_idx - 1 != start_row:
-                    merge_cells(worksheet, start_row, col_idx, row_idx - 1)
-                start_row = None
-        if start_row is not None and start_row <= len(df):
-            merge_cells(worksheet, start_row, col_idx, len(df) + 1)
+                correct_level_to_merge = True
 
-    # Handle the value column separately as before
-    handle_value_column_separately(worksheet, df, subtotal_rows, num_columns)
+            if start_row is not None and not(is_empty_row and correct_level_to_merge):
+                print(f"Merge Column: {col_idx}, Rows: {start_row} to {idx - 1}")
+                merge_cells(worksheet, start_row, col_idx, idx - 1)
+                start_row = None
+
+            elif is_empty_row and correct_level_to_merge and not is_subtotal_row:
+                if start_row is None:
+                    start_row = idx
+
+        if start_row is not None:
+            print(f"Merge Column: {col_idx}, Rows: {start_row} to {len(df) + 1}")
+            merge_cells(worksheet, start_row, col_idx, len(df) + 1)
 
 
 def handle_value_column_separately(worksheet, df, subtotal_rows, num_columns):
