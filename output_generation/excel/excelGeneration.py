@@ -2,7 +2,7 @@ import pandas as pd
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Border, Side
 import logging
-from output_generation.excel.excelStyles import apply_excel_colors, merge_empty_cells_new
+from output_generation.excel.excelStyles import apply_excel_colors, merge_empty_cells
 from output_generation.pdf.tableStyling import create_table_data
 
 logging.basicConfig(level=logging.DEBUG)
@@ -35,7 +35,7 @@ def apply_styles_excel(worksheet, config, df):
     apply_cell_alignment(df, worksheet, config)
     apply_cell_borders(worksheet)
     apply_excel_colors(worksheet, config)
-    merge_empty_cells_new(worksheet, df)
+    merge_empty_cells(worksheet, df)
 
 
 def set_row_heights(worksheet):

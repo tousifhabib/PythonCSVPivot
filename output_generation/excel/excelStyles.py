@@ -88,70 +88,47 @@ def apply_excel_colors(worksheet: Worksheet, config: Dict[str, Any]) -> None:
     apply_row_styles(worksheet, config)
 
 
-def merge_empty_cells_new(worksheet, df: pd.DataFrame) -> None:
-    subtotal_rows, subtotal_levels = identify_subtotal_rows_new(df)
-    merge_cells_new(worksheet, df, subtotal_rows, subtotal_levels)
+def merge_empty_cells(worksheet, df: pd.DataFrame) -> None:
+    subtotal_rows, subtotal_levels = identify_subtotal_rows(df)
+    merge_cells(worksheet, df, subtotal_rows, subtotal_levels)
 
 
-def identify_subtotal_rows_new(df: pd.DataFrame) -> Tuple[Set[int], Dict[int, int]]:
+def identify_subtotal_rows(df: pd.DataFrame) -> Tuple[Set[int], Dict[int, int]]:
     subtotal_rows = set()
-    subtotal_levels = {}
+    level_by_row = {}
     for col_idx, col in enumerate(df.columns[:-2], start=1):
         for row_idx, value in enumerate(df[col], start=2):
             if not pd.isna(value) and value != '':
                 subtotal_rows.add(row_idx)
-                subtotal_levels[row_idx] = col_idx
-
-    print(subtotal_rows)
-    print(subtotal_levels)
-    return subtotal_rows, subtotal_levels
+                level_by_row[row_idx] = col_idx
+    return subtotal_rows, level_by_row
 
 
-def merge_cells_new(worksheet, df: pd.DataFrame, subtotal_rows: Set[int], subtotal_levels: Dict[int, int]) -> None:
+def merge_cells(worksheet, df: pd.DataFrame, subtotal_rows: Set[int], level_by_row: Dict[int, int]) -> None:
     num_columns = len(df.columns)
-
     for col_idx in range(num_columns - 2, 0, -1):
-        print(f"\n-- Processing Column: {col_idx}")
         start_row = None
-        for idx, value in enumerate(df.iloc[:, col_idx - 1], start=2):
-            print(f"\n- Processing row: {idx}")
-            is_subtotal_row = idx in subtotal_rows and subtotal_levels[idx] <= col_idx
-            is_empty_row = pd.isna(value) or value == ''
-
-            if idx in subtotal_rows:
-                correct_level_to_merge = subtotal_levels[idx] > col_idx
-            else:
-                correct_level_to_merge = True
-
-            if start_row is not None and not(is_empty_row and correct_level_to_merge):
-                print(f"Merge Column: {col_idx}, Rows: {start_row} to {idx - 1}")
-                merge_cells(worksheet, start_row, col_idx, idx - 1)
+        for row_idx, value in enumerate(df.iloc[:, col_idx - 1], start=2):
+            if should_merge(row_idx, value, subtotal_rows, level_by_row, col_idx):
+                start_row = start_row or row_idx
+            elif start_row is not None and should_not_merge(row_idx, value, subtotal_rows, level_by_row, col_idx):
+                execute_merge(worksheet, start_row, col_idx, row_idx - 1)
                 start_row = None
-
-            elif is_empty_row and correct_level_to_merge and not is_subtotal_row:
-                if start_row is None:
-                    start_row = idx
-
         if start_row is not None:
-            print(f"Merge Column: {col_idx}, Rows: {start_row} to {len(df) + 1}")
-            merge_cells(worksheet, start_row, col_idx, len(df) + 1)
+            execute_merge(worksheet, start_row, col_idx, len(df) + 1)
 
 
-def handle_value_column_separately(worksheet, df, subtotal_rows, num_columns):
-    start_row = None
-    for row_idx, value in enumerate(df.iloc[:, -1], start=2):
-        if pd.isna(value) or value == '':
-            if start_row is None:
-                start_row = row_idx
-        else:
-            if start_row is not None and row_idx - 1 != start_row:
-                if row_idx - 1 not in subtotal_rows:
-                    merge_cells(worksheet, start_row, num_columns, row_idx - 1)
-            start_row = None
-    if start_row is not None and start_row <= len(df):
-        merge_cells(worksheet, start_row, num_columns, len(df) + 1)
+def should_merge(row_idx: int, value, subtotal_rows: Set[int], level_by_row: Dict[int, int], col_idx: int) -> bool:
+    is_subtotal_row = row_idx in subtotal_rows and level_by_row[row_idx] <= col_idx
+    is_empty_row = pd.isna(value) or value == ''
+    correct_level = row_idx not in subtotal_rows or level_by_row[row_idx] > col_idx
+    return is_empty_row and correct_level and not is_subtotal_row
 
 
-def merge_cells(worksheet, start_row: int, col_idx: int, end_row: int) -> None:
+def should_not_merge(row_idx: int, value, subtotal_rows: Set[int], level_by_row: Dict[int, int], col_idx: int) -> bool:
+    return not pd.isna(value) or value != '' or (row_idx in subtotal_rows and level_by_row[row_idx] <= col_idx)
+
+
+def execute_merge(worksheet, start_row: int, col_idx: int, end_row: int) -> None:
     if end_row > start_row:
         worksheet.merge_cells(start_row=start_row, start_column=col_idx, end_row=end_row, end_column=col_idx)
