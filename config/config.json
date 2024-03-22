@@ -35,20 +35,20 @@
     }
   },
   "data": {
-    "csv_file_path": "/Users/ts-tousif.habib/Development/Repos/automatic-failure-verification/csv_export/full_report_240314_1518.csv",
+    "csv_file_path": "/Users/tousifhabib/Downloads/DATA/Electric_Vehicle_Population_Data.csv",
     "filters": {
-      "result": "failed"
+      "Make": "TESLA"
     },
     "group_cols": [
-      "feature",
-      "errorType",
-      "comment"
+      "State",
+      "County",
+      "City"
     ],
     "agg_func": "count",
     "agg_col": "Count",
     "subtotal_col": [
-      "feature",
-      "errorType"
+      "State",
+      "County"
     ]
   }
 }

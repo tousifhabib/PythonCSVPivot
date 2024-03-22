@@ -88,56 +88,54 @@ def apply_excel_colors(worksheet: Worksheet, config: Dict[str, Any]) -> None:
     apply_row_styles(worksheet, config)
 
 
-def merge_empty_cells(worksheet, df: pd.DataFrame) -> None:
-    print(df)
-    for col_idx, col in enumerate(df.columns, start=1):
-        merge_column(worksheet, df, col_idx)
+def merge_empty_cells_new(worksheet, df: pd.DataFrame) -> None:
+    subtotal_rows, subtotal_levels = identify_subtotal_rows_new(df)
+    merge_cells_new(worksheet, df, subtotal_rows, subtotal_levels)
 
 
-def merge_column(worksheet, df: pd.DataFrame, col_idx: int) -> None:
-    start_row = None
-    prev_row_was_special = False  # Add a flag to track if the previous row was a special row
+def identify_subtotal_rows_new(df: pd.DataFrame) -> Tuple[Set[int], Dict[int, int]]:
+    subtotal_rows = set()
+    subtotal_levels = {}
+    for col_idx, col in enumerate(df.columns[:-2], start=1):
+        for row_idx, value in enumerate(df[col], start=2):
+            if not pd.isna(value) and value != '':
+                subtotal_rows.add(row_idx)
+                subtotal_levels[row_idx] = col_idx
+    return subtotal_rows, subtotal_levels
 
-    for row_idx, row_data in enumerate(df.values, start=2):
-        current_row_is_special = is_special_row1(df, row_idx)
-        next_row_is_special = is_special_row1(df, row_idx + 1) if row_idx < len(df) else False
 
-        if start_row is not None and (current_row_is_special or next_row_is_special):
-            merge_cells(worksheet, col_idx, start_row, row_idx - 1)
-            start_row = None
-
-        if current_row_is_special:
-            prev_row_was_special = True
-            continue
-        else:
-            prev_row_was_special = False
-
-        if should_span(row_data[col_idx - 1]):
-            if start_row is None and not prev_row_was_special:
-                start_row = row_idx
-        else:
-            if start_row is not None:
-                merge_cells(worksheet, col_idx, start_row, row_idx - 1)
+def merge_cells_new(worksheet, df: pd.DataFrame, subtotal_rows: Set[int], subtotal_levels: Dict[int, int]) -> None:
+    for col_idx, col in enumerate(df.columns[:-1], start=1):
+        start_row = None
+        for row_idx, value in enumerate(df[col], start=2):
+            is_subtotal_row = row_idx in subtotal_rows
+            if not is_subtotal_row and (pd.isna(value) or value == ''):
+                if start_row is None:
+                    start_row = row_idx
+            else:
+                if start_row is not None and row_idx - 1 != start_row:
+                    if not is_subtotal_row or subtotal_levels[row_idx] > col_idx:
+                        merge_cells(worksheet, start_row, col_idx, row_idx - 1)
                 start_row = None
 
-    if start_row is not None and not prev_row_was_special:
-        merge_cells(worksheet, col_idx, start_row, len(df) + 1)
+        if start_row is not None and start_row <= len(df):
+            merge_cells(worksheet, start_row, col_idx, len(df) + 1)
+
+    # Merge consecutive empty cells in the value column
+    start_row = None
+    for row_idx, value in enumerate(df.iloc[:, -1], start=2):
+        if pd.isna(value) or value == '':
+            if start_row is None:
+                start_row = row_idx
+        else:
+            if start_row is not None and row_idx - 1 != start_row:
+                merge_cells(worksheet, start_row, len(df.columns), row_idx - 1)
+            start_row = None
+
+    if start_row is not None and start_row <= len(df):
+        merge_cells(worksheet, start_row, len(df.columns), len(df) + 1)
 
 
-def is_special_row1(df: pd.DataFrame, row_idx: int) -> bool:
-    if row_idx - 1 < len(df):
-        row_data = df.iloc[row_idx - 2]
-        is_total = "Grand Total" in str(row_data.iloc[0])
-        if not is_total and not pd.isna(row_data.iloc[0]) and all(pd.isna(val) for val in row_data.iloc[1:]):
-            return True
-        return is_total
-    return False
-
-
-def should_span(cell_value) -> bool:
-    return pd.isna(cell_value) or cell_value == ""
-
-
-def merge_cells(worksheet, col_idx: int, start_row: int, end_row: int) -> None:
-    if start_row is not None and end_row - start_row > 1:
+def merge_cells(worksheet, start_row: int, col_idx: int, end_row: int) -> None:
+    if end_row > start_row:
         worksheet.merge_cells(start_row=start_row, start_column=col_idx, end_row=end_row, end_column=col_idx)
