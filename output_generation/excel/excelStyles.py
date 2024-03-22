@@ -101,30 +101,38 @@ def identify_subtotal_rows_new(df: pd.DataFrame) -> Tuple[Set[int], Dict[int, in
             if not pd.isna(value) and value != '':
                 subtotal_rows.add(row_idx)
                 subtotal_levels[row_idx] = col_idx
+
+    print(subtotal_rows)
+    print(subtotal_levels)
     return subtotal_rows, subtotal_levels
 
 
 def merge_cells_new(worksheet, df: pd.DataFrame, subtotal_rows: Set[int], subtotal_levels: Dict[int, int]) -> None:
     num_columns = len(df.columns)
-    for col_idx, col in enumerate(df.columns[:-1], start=1):  # Exclude the last column (value column) from this loop
+
+    # Adjust to iterate from right to left, excluding the value column and the last subtotal level
+    for col_idx in range(num_columns - 2, 0,
+                         -1):  # Start from the second to last column (excluding value column) and move left
         start_row = None
-        for row_idx, value in enumerate(df[col], start=2):
+        for row_idx, value in enumerate(df.iloc[:, col_idx - 1], start=2):  # Adjust column index for 0-based indexing
             is_subtotal_row = row_idx in subtotal_rows
-            # Adjusted condition to properly check the hierarchy and merging rules
-            if not is_subtotal_row and (pd.isna(value) or value == ''):
+            correct_level_to_merge = subtotal_levels.get(row_idx, float('inf')) > col_idx
+
+            if not is_subtotal_row and (pd.isna(value) or value == '') and correct_level_to_merge:
                 if start_row is None:
                     start_row = row_idx
             else:
                 if start_row is not None and row_idx - 1 != start_row:
-                    # Ensure we do not merge cells across different levels incorrectly
-                    if (not is_subtotal_row) or (is_subtotal_row and subtotal_levels.get(row_idx, float('inf')) > col_idx):
-                        merge_cells(worksheet, start_row, col_idx, row_idx - 1)
+                    merge_cells(worksheet, start_row, col_idx, row_idx - 1)
                 start_row = None
-        # Handle any remaining cells to merge at the end of the column
         if start_row is not None and start_row <= len(df):
             merge_cells(worksheet, start_row, col_idx, len(df) + 1)
 
-    # Handle the value column separately
+    # Handle the value column separately as before
+    handle_value_column_separately(worksheet, df, subtotal_rows, num_columns)
+
+
+def handle_value_column_separately(worksheet, df, subtotal_rows, num_columns):
     start_row = None
     for row_idx, value in enumerate(df.iloc[:, -1], start=2):
         if pd.isna(value) or value == '':
@@ -132,11 +140,9 @@ def merge_cells_new(worksheet, df: pd.DataFrame, subtotal_rows: Set[int], subtot
                 start_row = row_idx
         else:
             if start_row is not None and row_idx - 1 != start_row:
-                # Check to ensure we don't merge through subtotal rows in the value column
                 if row_idx - 1 not in subtotal_rows:
                     merge_cells(worksheet, start_row, num_columns, row_idx - 1)
             start_row = None
-
     if start_row is not None and start_row <= len(df):
         merge_cells(worksheet, start_row, num_columns, len(df) + 1)
 
