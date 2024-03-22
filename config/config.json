@@ -24,6 +24,10 @@
         "background": "ADD8E6",
         "text": "000000"
       },
+      "subtotal_3": {
+        "background": "00FF1A",
+        "text": "000000"
+      },
       "grand_total": {
         "background": "FFFF00",
         "text": "000000"
@@ -42,13 +46,15 @@
     "group_cols": [
       "State",
       "County",
-      "City"
+      "City",
+      "Model"
     ],
     "agg_func": "count",
     "agg_col": "Count",
     "subtotal_col": [
       "State",
-      "County"
+      "County",
+      "City"
     ]
   }
 }
