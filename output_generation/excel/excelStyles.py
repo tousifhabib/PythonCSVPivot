@@ -89,33 +89,24 @@ def apply_excel_colors(worksheet: Worksheet, config: Dict[str, Any]) -> None:
 
 
 def merge_empty_cells(worksheet, df: pd.DataFrame) -> None:
+    print(df)
     for col_idx, col in enumerate(df.columns, start=1):
         merge_column(worksheet, df, col_idx)
 
 
 def merge_column(worksheet, df: pd.DataFrame, col_idx: int) -> None:
     start_row = None
-    prev_subtotal_row = None
-
-    for row_idx, value in enumerate(df.iloc[:, col_idx - 1], start=2):
+    for row_idx, row_data in enumerate(df.values, start=2):
         if is_special_row1(df, row_idx):
-            if start_row is not None:
-                logging.info(f"Column {col_idx}: Merging cells from row {start_row} to {row_idx - 1}. Special row at {row_idx}.")
-                merge_cells(worksheet, col_idx, start_row, row_idx - 1)
+            merge_cells(worksheet, col_idx, start_row, row_idx)
             start_row = None
-            prev_subtotal_row = row_idx
-        elif should_span(value):
-            if start_row is None:
-                start_row = row_idx
+        elif should_span(row_data[col_idx - 1]):
+            start_row = start_row if start_row is not None else row_idx
         else:
-            if start_row is not None:
-                logging.info(f"Column {col_idx}: Merging cells from row {start_row} to {row_idx - 1}.")
-                merge_cells(worksheet, col_idx, start_row, row_idx - 1)
+            merge_cells(worksheet, col_idx, start_row, row_idx)
             start_row = None
 
-    if start_row is not None:
-        logging.info(f"Column {col_idx}: Merging cells from row {start_row} to {len(df) + 1}.")
-        merge_cells(worksheet, col_idx, start_row, len(df) + 1)
+    merge_cells(worksheet, col_idx, start_row, len(df) + 2)
 
 
 def is_special_row1(df: pd.DataFrame, row_idx: int) -> bool:
@@ -135,6 +126,5 @@ def should_span(cell_value) -> bool:
 
 
 def merge_cells(worksheet, col_idx: int, start_row: int, end_row: int) -> None:
-    if start_row is not None and end_row >= start_row:
-        worksheet.merge_cells(start_row=start_row, start_column=col_idx, end_row=end_row, end_column=col_idx)
-
+    if start_row is not None and end_row - start_row > 1:
+        worksheet.merge_cells(start_row=start_row, start_column=col_idx, end_row=end_row - 1, end_column=col_idx)
