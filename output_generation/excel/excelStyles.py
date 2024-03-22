@@ -7,8 +7,8 @@ from openpyxl.worksheet.worksheet import Worksheet
 from reportlab.lib import units
 from reportlab.lib.pagesizes import letter
 
-
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 def calculate_dynamic_page_size(table_width, table_height, config, paginate, num_rows):
     default_cell_height = 0.25 * units.inch
@@ -96,29 +96,42 @@ def merge_empty_cells(worksheet, df: pd.DataFrame) -> None:
 
 def merge_column(worksheet, df: pd.DataFrame, col_idx: int) -> None:
     start_row = None
+    prev_row_was_special = False  # Add a flag to track if the previous row was a special row
+
     for row_idx, row_data in enumerate(df.values, start=2):
-        if is_special_row1(df, row_idx):
-            merge_cells(worksheet, col_idx, start_row, row_idx)
-            start_row = None
-        elif should_span(row_data[col_idx - 1]):
-            start_row = start_row if start_row is not None else row_idx
-        else:
-            merge_cells(worksheet, col_idx, start_row, row_idx)
+        current_row_is_special = is_special_row1(df, row_idx)
+        next_row_is_special = is_special_row1(df, row_idx + 1) if row_idx < len(df) else False
+
+        if start_row is not None and (current_row_is_special or next_row_is_special):
+            merge_cells(worksheet, col_idx, start_row, row_idx - 1)
             start_row = None
 
-    merge_cells(worksheet, col_idx, start_row, len(df) + 2)
+        if current_row_is_special:
+            prev_row_was_special = True
+            continue
+        else:
+            prev_row_was_special = False
+
+        if should_span(row_data[col_idx - 1]):
+            if start_row is None and not prev_row_was_special:
+                start_row = row_idx
+        else:
+            if start_row is not None:
+                merge_cells(worksheet, col_idx, start_row, row_idx - 1)
+                start_row = None
+
+    if start_row is not None and not prev_row_was_special:
+        merge_cells(worksheet, col_idx, start_row, len(df) + 1)
 
 
 def is_special_row1(df: pd.DataFrame, row_idx: int) -> bool:
-    row_data = df.iloc[row_idx - 2]
-    is_total = "Grand Total" in str(row_data.iloc[0])
-    if row_idx > 2 and not is_total:
-        if not pd.isna(row_data.iloc[0]) and all(pd.isna(val) for val in row_data.iloc[1:-2]):
-            prev_row_data = df.iloc[row_idx - 3]
-            if str(prev_row_data.iloc[0]) != str(row_data.iloc[0]) and not all(
-                    pd.isna(val) for val in prev_row_data.iloc[1:-2]):
-                return True
-    return is_total
+    if row_idx - 1 < len(df):
+        row_data = df.iloc[row_idx - 2]
+        is_total = "Grand Total" in str(row_data.iloc[0])
+        if not is_total and not pd.isna(row_data.iloc[0]) and all(pd.isna(val) for val in row_data.iloc[1:]):
+            return True
+        return is_total
+    return False
 
 
 def should_span(cell_value) -> bool:
@@ -127,4 +140,4 @@ def should_span(cell_value) -> bool:
 
 def merge_cells(worksheet, col_idx: int, start_row: int, end_row: int) -> None:
     if start_row is not None and end_row - start_row > 1:
-        worksheet.merge_cells(start_row=start_row, start_column=col_idx, end_row=end_row - 1, end_column=col_idx)
+        worksheet.merge_cells(start_row=start_row, start_column=col_idx, end_row=end_row, end_column=col_idx)
